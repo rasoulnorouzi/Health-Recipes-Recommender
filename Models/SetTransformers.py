@@ -20,7 +20,12 @@ class MultiHeadAttention(nn.Module):
             it is used to mask out the padding tokens in the input
 
         returns:
-            a float tensor of shape [batch_size, seq_len, d_model]
+            a float tensor of shape [batch_size, seq_len_q, d_model]
+
+        notes:
+            In all situation:
+                dk = dv 
+                seq_k = seq_v
         '''
 
         self.d_model = d_model 
@@ -37,33 +42,32 @@ class MultiHeadAttention(nn.Module):
 
     def forward(self, q, k, v, mask = None):
         batch_size = q.size(0)
-        q = self.linear_q(q) # [batch_size, seq_len, d_k * n_heads]
-        k = self.linear_k(k) # [batch_size, seq_len, d_k * n_heads]
-        v = self.linear_v(v) # [batch_size, seq_len, d_v * n_heads]
+        q = self.linear_q(q) # [batch_size, seq_len_q, d_k * n_heads]
+        k = self.linear_k(k) # [batch_size, seq_len_v, d_k * n_heads]
+        v = self.linear_v(v) # [batch_size, seq_len_v, d_v * n_heads]
 
         q = q.view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)
-        # [batch_size, n_heads, seq_len, d_k]
+        # [batch_size, n_heads, seq_len_q, d_k]
         k = k.view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)
-        # [batch_size, n_heads, seq_len, d_k]
+        # [batch_size, n_heads, seq_len_v, d_k]
         v = v.view(batch_size, -1, self.n_heads, self.d_v).transpose(1, 2)
-        # [batch_size, n_heads, seq_len, d_v]
+        # [batch_size, n_heads, seq_len_v, d_v]
 
         energy = torch.matmul(q, k.transpose(2, 3)) / np.sqrt(self.d_k)
-        # [batch_size, n_heads, seq_len, seq_len]
+        # k.transpose(2, 3) means transpose [batch_size, n_heads, seq_len_v, d_k] to [batch_size, n_heads, d_k, seq_len_v]
+        # [batch_size, n_heads, seq_len_q, seq_len_v]
 
         if mask is not None:
             energy = energy.masked_fill(mask, float('-inf'))
 
         attention = F.softmax(energy, dim=-1)
-        # [batch_size, n_heads, seq_len, seq_len]
+        # [batch_size, n_heads, seq_len_q, seq_len_v]
 
         context = torch.matmul(attention, v)
-        # [batch_size, n_heads, seq_len, d_v]
+        # [batch_size, n_heads, seq_len_q, d_v]
         context = context.transpose(1, 2).contiguous().view(batch_size, -1, self.n_heads * self.d_v)
-        # [batch_size, seq_len, n_heads * d_v]
+        # [batch_size, seq_len_q, n_heads * d_v = d_model]
         
         output = self.linear_o(context)
-        # [batch_size, seq_len, d_model]
+        # [batch_size, seq_len_q, d_model]
         return output
-
-
