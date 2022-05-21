@@ -183,6 +183,9 @@ class PMA(nn.Module):
         self.S = nn.Parameter(torch.Tensor(1, n_seeds, d_model))
         nn.init.xavier_uniform_(self.S)
         self.mab = MAB(d_model, n_heads)
+        self.rFF = nn.Linear(d_model, d_model)
     
     def forward(self, X):
+        
+        X = F.relu(self.rFF(X))
         return self.mab(self.S.repeat(X.size(0), 1, 1), X)
