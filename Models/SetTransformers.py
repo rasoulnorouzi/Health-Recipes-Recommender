@@ -96,3 +96,35 @@ class MAB(nn.Module):
         H = self.norm1(X + self.attention(X, Y, Y))
         _MAB = self.norm2(H + self.rFF(H))
         return _MAB
+
+
+
+# Set Attention Block (SAB)
+class SAB(nn.Module):
+    def __init__(self, d_model, n_heads):
+        super (SAB, self).__init__()
+        '''
+        Arguments:
+            d_model: the dimension of Embedding Layer
+            n_heads: the number of heads
+        inputs:
+            X: the Embedding tensor of shape [batch_size, seq_len, d_model]
+        returns:
+            a float tensor of shape [batch_size, seq_len, d_model]
+        '''
+        self.d_model = d_model
+        self.n_heads = n_heads
+
+        self.mab = MAB(self.d_model, self.n_heads)
+
+    def forward(self, X):
+
+        batch_size = X.size(0)
+        X = X.view(batch_size, -1, self.d_model)
+        # [batch_size, seq_len, d_model]
+        X = self.mab(X, X)
+        # [batch_size, seq_len, d_model]
+
+        return X
+
+
