@@ -6,7 +6,7 @@ from TransformerBlocks import *
 
 
 class SetTransformer(nn.Module):
-    def __init__(self, d_model, n_heads, n_seeds, induced_dim, d_output):
+    def __init__(self, d_model, n_heads, n_seeds, induced_dim, d_output, mask=None):
         super(SetTransformer, self).__init__()
         
         '''
