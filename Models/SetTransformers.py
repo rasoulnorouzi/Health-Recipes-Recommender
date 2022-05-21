@@ -71,3 +71,28 @@ class MultiHeadAttention(nn.Module):
         output = self.linear_o(context)
         # [batch_size, seq_len_q, d_model]
         return output
+
+
+class MAB(nn.Module):
+    def __init__(self, d_model, n_heads):
+        super(MAB, self).__init__()
+        '''
+        Arguments:
+            d_model: the dimension of Embedding Layer
+            n_heads: the number of heads
+        inputs:
+            X: the query tensor of shape [batch_size, seq_len_X, d_model]
+            Y: the key tensor of shape [batch_size, seq_len_Y, d_model]
+        returns:
+            a float tensor of shape [batch_size, seq_len_X, d_model]
+        '''
+
+        self.attention = MultiHeadAttention(d_model, n_heads)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.rFF = nn.Linear(d_model, d_model)
+
+    def forward(self, X, Y):
+        H = self.norm1(X + self.attention(X, Y, Y))
+        _MAB = self.norm2(H + self.rFF(H))
+        return _MAB
