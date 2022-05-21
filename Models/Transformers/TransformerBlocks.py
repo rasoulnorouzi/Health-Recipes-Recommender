@@ -72,7 +72,7 @@ class MultiHeadAttention(nn.Module):
         # [batch_size, seq_len_q, d_model]
         return output
 
-
+# Multi Head Attention Block
 class MAB(nn.Module):
     def __init__(self, d_model, n_heads):
         super(MAB, self).__init__()
@@ -164,3 +164,27 @@ class ISAB(nn.Module):
         _ISAB = self.mab1(X,H)
 
         return _ISAB
+    
+    
+    
+# Pooling by Multihead Attention
+class PMA(nn.Module):
+    def __init__(self, d_model, n_heads, n_seeds):
+        super(PMA, self).__init__()
+        '''
+        Arguments:
+            d_model: the dimension of Embedding Layer
+            n_heads: the number of heads
+            n_seeds: the number of seed vectors
+        inputs:
+            X: the Embedding tensor of shape [batch_size, seq_len_X, d_model]
+        returns:
+            a float tensor of shape [batch_size, n_seeds, d_model]
+        '''
+
+        self.S = nn.Parameter(torch.Tensor(1, n_seeds, d_model))
+        nn.init.xavier_uniform_(self.S)
+        self.mab = MAB(d_model, n_heads)
+    
+    def forward(self, X):
+        return self.mab(self.S.repeat(X.size(0), 1, 1), X)
