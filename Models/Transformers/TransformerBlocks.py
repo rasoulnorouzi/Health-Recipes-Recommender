@@ -94,7 +94,7 @@ class MAB(nn.Module):
 
     def forward(self, X, Y):
         H = self.norm1(X + self.attention(X, Y, Y))
-        _MAB = self.norm2(H + self.rFF(H))
+        _MAB = self.norm2(H + F.relu(self.rFF(H)))
         return _MAB
 
 
