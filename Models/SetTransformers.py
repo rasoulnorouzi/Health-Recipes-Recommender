@@ -7,7 +7,7 @@ class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, n_heads):
         super(MultiHeadAttention, self).__init__()
 
-        '''
+    '''
         Arguments:
             d_model: the dimension of Embedding Layer
             n_heads: the number of heads
@@ -26,7 +26,7 @@ class MultiHeadAttention(nn.Module):
             In all situation:
                 dk = dv 
                 seq_k = seq_v
-        '''
+    '''
 
         self.d_model = d_model 
         self.n_heads = n_heads
