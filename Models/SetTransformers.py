@@ -1,3 +1,8 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
+
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, n_heads):
         super(MultiHeadAttention, self).__init__()
@@ -60,3 +65,5 @@ class MultiHeadAttention(nn.Module):
         output = self.linear_o(context)
         # [batch_size, seq_len, d_model]
         return output
+
+
