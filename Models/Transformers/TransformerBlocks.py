@@ -17,7 +17,7 @@ class MultiHeadAttention(nn.Module):
             q: the query tensor of shape [batch_size, set_len, d_model]
             k: the key tensor of shape [batch_size, set_len, d_model]
             v: the value tensor of shape [batch_size, set_len, d_model]
-            padding_mask: the masking tensor of shape [batch_size, set_len, set_len],
+            padding_mask: the masking tensor of shape [batch_size, set_len_q, set_len_v],
             it is used to mask out the padding tokens in the input
         returns:
             a float tensor of shape [batch_size, set_len_q, d_model]
