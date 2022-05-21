@@ -128,3 +128,41 @@ class SAB(nn.Module):
         return X
 
 
+# Induced Set-Attention Block
+class ISAB(nn.Module):
+    def __init__(self, d_model, n_heads, induced_dim):
+        super(ISAB, self).__init__()
+        '''
+        Arguments:
+            d_model: the dimension of Embedding Layer
+            n_heads: the number of heads
+            induced_dim: the dimension of induced vector
+        inputs:
+            X: the Embedding tensor of shape [batch_size, seq_len_X, d_model]
+        
+        returns:
+            a float tensor of shape [batch_size, seq_len_X, d_model]
+        notes:
+            induce_dim = id
+        '''
+        self.d_model = d_model
+
+        self.n_heads = n_heads
+
+        self.induced_dim = induced_dim
+
+        self.I = nn.Parameter(torch.Tensor(1, self.induced_dim, d_model))
+        nn.init.xavier_uniform_(self.I)
+        self.mab0 = MAB(self.d_model, self.n_heads)
+        # [batch, seq_len_id, d_model]
+        self.mab1 = MAB(self.d_model, self.n_heads)
+        # [batch, seq_len_X, d_model]
+
+    def forward(self, X):
+
+        H = self.mab0(self.I.repeat(X.size(0),1,1) , X)
+        _ISAB = self.mab1(X,H)
+
+        return _ISAB
+
+
