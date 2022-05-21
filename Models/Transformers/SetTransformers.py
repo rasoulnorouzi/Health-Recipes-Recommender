@@ -17,7 +17,7 @@ class SetTransformer(nn.Module):
             induced_dim: the dimension of induced vector
             d_output: the dimension of output
         inputs:
-            X: the Embedding tensor of shape [batch_size, seq_len_X, d_model]
+            X: the Embedding tensor of shape [batch_size, set_len_X, d_model]
         returns:
             a float tensor of shape [batch_size, n_seeds, d_output]
 
