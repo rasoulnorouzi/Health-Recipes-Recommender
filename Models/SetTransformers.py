@@ -52,7 +52,7 @@ class MultiHeadAttention(nn.Module):
         # [batch_size, n_heads, seq_len, seq_len]
 
         if mask is not None:
-            energy = energy.masked_fill(mask, -1e10)
+            energy = energy.masked_fill(mask, float('-inf'))
 
         attention = F.softmax(energy, dim=-1)
         # [batch_size, n_heads, seq_len, seq_len]
