@@ -35,7 +35,7 @@ class MultiHeadAttention(nn.Module):
         self.linear_v = nn.Linear(self.d_model, self.d_v * self.n_heads)
         self.linear_o = nn.Linear( self.d_v * self.n_heads, self.d_model)
 
-    def forward(self, q, k, v, padding_mask):
+    def forward(self, q, k, v, mask = None):
         batch_size = q.size(0)
         q = self.linear_q(q) # [batch_size, seq_len, d_k * n_heads]
         k = self.linear_k(k) # [batch_size, seq_len, d_k * n_heads]
@@ -51,8 +51,8 @@ class MultiHeadAttention(nn.Module):
         energy = torch.matmul(q, k.transpose(2, 3)) / np.sqrt(self.d_k)
         # [batch_size, n_heads, seq_len, seq_len]
 
-        if padding_mask is not None:
-            energy = energy.masked_fill(padding_mask, -1e10)
+        if mask is not None:
+            energy = energy.masked_fill(mask, -1e10)
 
         attention = F.softmax(energy, dim=-1)
         # [batch_size, n_heads, seq_len, seq_len]
