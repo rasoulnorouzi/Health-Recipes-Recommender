@@ -7,7 +7,7 @@ import numpy as np
 
 # Multi Head Attention Block
 class MultiHeadAttention(nn.Module):
-    def __init__(self, d_model, n_heads, mask=None):
+    def __init__(self, d_model, n_heads):
         super(MultiHeadAttention, self).__init__()
 
         '''
@@ -56,9 +56,6 @@ class MultiHeadAttention(nn.Module):
         energy = torch.matmul(q, k.transpose(2, 3)) / np.sqrt(self.d_k)
         # k.transpose(2, 3) means transpose [batch_size, n_heads, set_len_v, d_k] to [batch_size, n_heads, d_k, se_len_v]
         # [batch_size, n_heads, set_len_q, set_len_v]
-
-        if mask is not None:
-            energy = energy.masked_fill(mask, float('-inf'))
 
         attention = F.softmax(energy, dim=-1)
         # [batch_size, n_heads, set_len_q, set_len_v]
