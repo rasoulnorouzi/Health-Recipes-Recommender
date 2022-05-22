@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+#######################################################################################
 
 # Multi Head Attention Block
 class MultiHeadAttention(nn.Module):
@@ -17,7 +18,7 @@ class MultiHeadAttention(nn.Module):
             q: the query tensor of shape [batch_size, set_len, d_model]
             k: the key tensor of shape [batch_size, set_len, d_model]
             v: the value tensor of shape [batch_size, set_len, d_model]
-            padding_mask: the masking tensor of shape [batch_size, set_len_q, set_len_v],
+            padding_mask: the masking tensor of shape [batch_size, set_len, set_len],
             it is used to mask out the padding tokens in the input
         returns:
             a float tensor of shape [batch_size, set_len_q, d_model]
@@ -53,7 +54,7 @@ class MultiHeadAttention(nn.Module):
         # [batch_size, n_heads, set_len_v, d_v]
 
         energy = torch.matmul(q, k.transpose(2, 3)) / np.sqrt(self.d_k)
-        # k.transpose(2, 3) means transpose [batch_size, n_heads, set_len_v, d_k] to [batch_size, n_heads, d_k, set_len_v]
+        # k.transpose(2, 3) means transpose [batch_size, n_heads, set_len_v, d_k] to [batch_size, n_heads, d_k, se_len_v]
         # [batch_size, n_heads, set_len_q, set_len_v]
 
         if mask is not None:
@@ -71,9 +72,34 @@ class MultiHeadAttention(nn.Module):
         # [batch_size, set_len_q, d_model]
         return output
 
-# Multi Head Attention Block
+#######################################################################################
+
+# Row-wise Feed Forward Network
+class RFF(nn.Module):
+    def __init__(self, d_model, forward_exapnsion):
+        super(RFF, self).__init__()
+        '''
+        Arguments:
+            d_model: the dimension of Embedding Layer
+            forward_exapnsion: the number of forward expansion
+
+        inputs:
+            x: the input tensor of shape [batch_size, set_len, d_model]
+        returns:
+            a float tensor of shape [batch_size, set_len, d_model]
+        '''
+        self.d_model = d_model
+        self.linear_r = nn.Sequential(
+            nn.Linear(self.d_model, self.d_model*forward_exapnsion),
+            nn.ReLU(),
+            nn.Linear(self.d_model*forward_exapnsion, self.d_model)
+        )
+    def forward(self, x):
+        return self.linear_r(x)
+#######################################################################################
+
 class MAB(nn.Module):
-    def __init__(self, d_model, n_heads):
+    def __init__(self, d_model, n_heads, forward_exapnsion):
         super(MAB, self).__init__()
         '''
         Arguments:
@@ -89,18 +115,18 @@ class MAB(nn.Module):
         self.attention = MultiHeadAttention(d_model, n_heads)
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
-        self.rFF = nn.Linear(d_model, d_model)
+        self.rFF = RFF(d_model, forward_exapnsion)
 
     def forward(self, X, Y):
         H = self.norm1(X + self.attention(X, Y, Y))
-        _MAB = self.norm2(H + F.relu(self.rFF(H)))
+        _MAB = self.norm2(H + self.rFF(H))
         return _MAB
 
-
+#######################################################################################
 
 # Set Attention Block (SAB)
 class SAB(nn.Module):
-    def __init__(self, d_model, n_heads):
+    def __init__(self, d_model, n_heads, forward_exapnsion):
         super (SAB, self).__init__()
         '''
         Arguments:
@@ -114,7 +140,7 @@ class SAB(nn.Module):
         self.d_model = d_model
         self.n_heads = n_heads
 
-        self.mab = MAB(self.d_model, self.n_heads)
+        self.mab = MAB(self.d_model, self.n_heads, forward_exapnsion)
 
     def forward(self, X):
 
@@ -126,10 +152,11 @@ class SAB(nn.Module):
 
         return X
 
+#######################################################################################
 
 # Induced Set-Attention Block
 class ISAB(nn.Module):
-    def __init__(self, d_model, n_heads, induced_dim):
+    def __init__(self, d_model, n_heads, induced_dim, forward_exapnsion):
         super(ISAB, self).__init__()
         '''
         Arguments:
@@ -152,9 +179,9 @@ class ISAB(nn.Module):
 
         self.I = nn.Parameter(torch.Tensor(1, self.induced_dim, d_model))
         nn.init.xavier_uniform_(self.I)
-        self.mab0 = MAB(self.d_model, self.n_heads)
+        self.mab0 = MAB(self.d_model, self.n_heads, forward_exapnsion)
         # [batch, set_len_id, d_model]
-        self.mab1 = MAB(self.d_model, self.n_heads)
+        self.mab1 = MAB(self.d_model, self.n_heads, forward_exapnsion)
         # [batch, set_len_X, d_model]
 
     def forward(self, X):
@@ -165,9 +192,11 @@ class ISAB(nn.Module):
         return _ISAB
 
 
+#######################################################################################
+
 # Pooling by Multihead Attention
 class PMA(nn.Module):
-    def __init__(self, d_model, n_heads, n_seeds):
+    def __init__(self, d_model, n_heads, n_seeds, forward_exapnsion):
         super(PMA, self).__init__()
         '''
         Arguments:
@@ -182,10 +211,11 @@ class PMA(nn.Module):
 
         self.S = nn.Parameter(torch.Tensor(1, n_seeds, d_model))
         nn.init.xavier_uniform_(self.S)
-        self.mab = MAB(d_model, n_heads)
-        self.rFF = nn.Linear(d_model, d_model)
+        self.mab = MAB(d_model, n_heads, forward_exapnsion)
+        self.rFF = RFF(d_model, forward_exapnsion)
     
     def forward(self, X):
-        
-        X = F.relu(self.rFF(X))
+        X = self.rFF(X)
         return self.mab(self.S.repeat(X.size(0), 1, 1), X)
+    
+#######################################################################################
