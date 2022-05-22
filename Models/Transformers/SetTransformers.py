@@ -6,7 +6,7 @@ from TransformerBlocks import *
 
 
 class SetTransformer(nn.Module):
-    def __init__(self, d_model, n_heads, n_seeds, induced_dim, d_output, mask=None):
+    def __init__(self, d_model, n_heads, n_seeds, induced_dim, d_output, froward_expansion=2):
         super(SetTransformer, self).__init__()
         
         '''
@@ -24,18 +24,17 @@ class SetTransformer(nn.Module):
         '''
 
         self.enc = nn.Sequential(
-            ISAB(d_model, n_heads, induced_dim),
-            ISAB(d_model, n_heads, induced_dim),
+            ISAB(d_model, n_heads, induced_dim, froward_expansion),
+            ISAB(d_model, n_heads, induced_dim, froward_expansion),
         )
         self.dec = nn.Sequential(
-            PMA(d_model, n_heads, n_seeds),
-            SAB(d_model, n_heads),
-            SAB(d_model, n_heads),
+            PMA(d_model, n_heads, n_seeds, froward_expansion),
+            SAB(d_model, n_heads, froward_expansion),
+            SAB(d_model, n_heads, froward_expansion),
             nn.Linear(d_model, d_output)
             )
     def forward(self, X):
         X = self.enc(X)
         X = self.dec(X)
         return X
-
 
