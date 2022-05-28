@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from TransformerBlocks import *
+from SetTransformerBlocks import *
 
 
 class SetTransformer(nn.Module):
