@@ -43,8 +43,6 @@ class VAE(nn.Module):
         z_log_var = self.z_log_var(h)
         z = self.sampling(z_mean, z_log_var)
         h_decoder = self.tanh(self.h_decoder(z))
-        # x_bar = self.sigmoid(self.x_bar(h_decoder))
-        # x_bar = self.relu(self.x_bar(h_decoder))
         x_bar = self.x_bar(h_decoder)
         return x_bar, z_mean, z_log_var
 
